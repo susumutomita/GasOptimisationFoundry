@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.0; 
+//*** gOpt1 *** Changed the compiler version to the latest
+pragma solidity ^0.8.19; 
 
 /**
  * @dev Provides information about the current execution context, including the
