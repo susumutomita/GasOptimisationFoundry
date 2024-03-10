@@ -59,23 +59,8 @@ contract GasContract is Ownable {
     mapping(address => ImportantStruct) public whiteListStruct;
 
     event AddedToWhitelist(address userAddress, uint256 tier);
-
-    modifier onlyAdminOrOwner() {
-        address senderOfTx = msg.sender;
-        if (checkForAdmin(senderOfTx)) {
-            require(
-                checkForAdmin(senderOfTx),
-                "Gas Contract Only Admin Check-  Caller not admin"
-            );
-            _;
-        } else if (senderOfTx == contractOwner) {
-            _;
-        } else {
-            revert(
-                "Error in Gas contract - onlyAdminOrOwner modifier : revert happened because the originator of the transaction was not the admin, and furthermore he wasn't the owner of the contract, so he cannot run this function"
-            );
-        }
-    }
+    // *** gOpt4 *** : Removing the modifier and including the same logic within the
+    // require statement - modifier onlyAdminOrOwner deleted
 
     modifier checkIfWhiteListed(address sender) {
         address senderOfTx = msg.sender;
@@ -109,25 +94,26 @@ contract GasContract is Ownable {
         contractOwner = msg.sender;
         totalSupply = _totalSupply;
 
-        for (uint256 ii = 0; ii < administrators.length; ii++) {
-            if (_admins[ii] != address(0)) {
-                administrators[ii] = _admins[ii];
-                if (_admins[ii] == contractOwner) {
+        for (uint256 i = 0; i < administrators.length; i++) {
+            if (_admins[i] != address(0)) {
+                administrators[i] = _admins[i];
+                if (_admins[i] == contractOwner) {
                     balances[contractOwner] = totalSupply;
                 } else {
-                    balances[_admins[ii]] = 0;
+                    balances[_admins[i]] = 0;
                 }
-                if (_admins[ii] == contractOwner) {
-                    emit supplyChanged(_admins[ii], totalSupply);
-                } else if (_admins[ii] != contractOwner) {
-                    emit supplyChanged(_admins[ii], 0);
+                if (_admins[i] == contractOwner) {
+                    emit supplyChanged(_admins[i], totalSupply);
+                } else if (_admins[i] != contractOwner) {
+                    emit supplyChanged(_admins[i], 0);
                 }
             }
         }
     }
-    
+    // *** gOpt3 *** Function modifier changed from public to external as its not used 
+    // within the contract
     function getPaymentHistory()
-        public
+        external
         payable
         returns (History[] memory paymentHistory_)
     {
@@ -136,8 +122,8 @@ contract GasContract is Ownable {
 
     function checkForAdmin(address _user) public view returns (bool admin_) {
         bool admin = false;
-        for (uint256 ii = 0; ii < administrators.length; ii++) {
-            if (administrators[ii] == _user) {
+        for (uint256 i = 0; i < administrators.length; i++) {
+            if (administrators[i] == _user) {
                 admin = true;
             }
         }
@@ -220,7 +206,14 @@ contract GasContract is Ownable {
         uint256 _ID,
         uint256 _amount,
         PaymentType _type
-    ) public onlyAdminOrOwner {
+    ) public  {
+        // *** gOpt4 *** : Removing the modifier and including the same logic within the
+        // require statement - require statement instead of modifier onlyAdminOrOwner
+        require(
+        checkForAdmin(msg.sender) || msg.sender == contractOwner,
+        "Gas Contract Only Admin Check-  Caller not admin or owner"
+        );
+
         require(
             _ID > 0,
             "Gas Contract - Update Payment function - ID must be greater than 0"
@@ -236,12 +229,12 @@ contract GasContract is Ownable {
 
         address senderOfTx = msg.sender;
 
-        for (uint256 ii = 0; ii < payments[_user].length; ii++) {
-            if (payments[_user][ii].paymentID == _ID) {
-                payments[_user][ii].adminUpdated = true;
-                payments[_user][ii].admin = _user;
-                payments[_user][ii].paymentType = _type;
-                payments[_user][ii].amount = _amount;
+        for (uint256 i = 0; i < payments[_user].length; i++) {
+            if (payments[_user][i].paymentID == _ID) {
+                payments[_user][i].adminUpdated = true;
+                payments[_user][i].admin = _user;
+                payments[_user][i].paymentType = _type;
+                payments[_user][i].amount = _amount;
                 //*** gOpt2 *** Unused function : deleted calling getTradingMode function which 
                 //doesnt have an impact
                 //*** gOpt2 *** unused function argument : removed the argument tradingMode from 
@@ -251,7 +244,7 @@ contract GasContract is Ownable {
                     senderOfTx,
                     _ID,
                     _amount,
-                    payments[_user][ii].recipientName
+                    payments[_user][i].recipientName
                 );
             }
         }
@@ -259,8 +252,14 @@ contract GasContract is Ownable {
 
     function addToWhitelist(address _userAddrs, uint256 _tier)
         public
-        onlyAdminOrOwner
+        
     {
+        // *** gOpt4 *** : Removing the modifier and including the same logic within the
+        // require statement - require statement instead of modifier onlyAdminOrOwner
+        require(
+        checkForAdmin(msg.sender) || msg.sender == contractOwner,
+        "Gas Contract Only Admin Check-  Caller not admin or owner"
+    );
         require(
             _tier < 255,
             "Gas Contract - addToWhitelist function -  tier level should not be greater than 255"
